@@ -138,12 +138,15 @@ CMakeFiles/Convection.dir/Convection.cc.o
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/constraint_matrix.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/exceptions.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/full_matrix.h
+ /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/householder.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/identity_matrix.h
+ /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/lapack_full_matrix.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/lapack_support.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/precondition.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/solver.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/solver_cg.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/solver_control.h
+ /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/solver_gmres.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/sparse_matrix.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/sparsity_pattern.h
  /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/tridiagonal_matrix.h

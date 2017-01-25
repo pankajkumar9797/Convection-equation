@@ -137,12 +137,15 @@ CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/i
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/constraint_matrix.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/exceptions.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/full_matrix.h
+CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/householder.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/identity_matrix.h
+CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/lapack_full_matrix.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/lapack_support.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/precondition.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/solver.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/solver_cg.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/solver_control.h
+CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/solver_gmres.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/sparse_matrix.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/sparsity_pattern.h
 CMakeFiles/Convection.dir/Convection.cc.o: /home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II/lac/tridiagonal_matrix.h

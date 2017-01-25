@@ -26,6 +26,7 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/compressed_sparsity_pattern.h>
 #include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/lac/solver_gmres.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/constraint_matrix.h>
@@ -101,8 +102,13 @@ private:
   void output_results () const;
 
   Triangulation<dim>   triangulation;
+
   FE_Q<dim>            fe;
+  FE_Q<dim>            fe_velocity;
+
   DoFHandler<dim>      dof_handler;
+  DoFHandler<dim>      dof_vel_handler;
+
   ConstraintMatrix     constraints;
 
   SparsityPattern      sparsity_pattern;
@@ -116,6 +122,8 @@ private:
   double               time_step;
   double               time;
   double               theta;
+
+  const double         nu = 1.0;
 };
 
 
@@ -136,6 +144,79 @@ private:
 };
 
 
+template<int dim>
+class RightHandSide1 : public Function<dim>
+{
+public:
+  RightHandSide1 (const double& nu = 1.0) : Function<dim>(), nu(nu) {}
+  virtual double value (const Point<dim> &p,
+                        const unsigned int component = 0) const;
+private:
+  double nu;
+};
+
+
+template<int dim>
+double RightHandSide1<dim> ::value(const Point<dim> &p,
+		                    const unsigned int component) const{
+
+	double PI = 3.14159265358979323846;
+
+    const double time = this->get_time();
+
+    double right_exp = std::exp(-time)*std::sin(PI*p[0])*( -std::sin(PI*p[1])
+                                                           - 2*nu*PI*PI*std::sin(PI*p[1])
+                                                           + PI*std::cos(PI*p[0]));
+
+    return right_exp;
+
+}
+
+template<int dim>
+class VelocityU : public Function<dim>
+{
+public:
+	VelocityU() : Function<dim>(){}
+    virtual double value (const dealii::Point<dim>   &p,
+                          const unsigned int  component = 0) const;
+
+};
+
+template <int dim>
+double
+VelocityU<dim>::value (const Point<dim>  &p,
+							  const unsigned int component) const
+{
+
+	double PI = 3.14159265358979323846;
+
+
+	return std::sin(PI*p[0])*std::sin(PI*p[1]);
+
+}
+
+template<int dim>
+class VelocityV : public Function<dim>
+{
+public:
+	VelocityV() : Function<dim>(){}
+    virtual double value (const dealii::Point<dim>   &p,
+                          const unsigned int  component = 0) const;
+
+};
+
+template <int dim>
+double
+VelocityV<dim>::value (const Point<dim>  &p,
+							  const unsigned int component) const
+{
+
+	double PI = 3.14159265358979323846;
+
+
+	return std::cos(PI*p[0])*std::cos(PI*p[1]);
+
+}
 
 template <int dim>
 class BoundaryValues : public Function<dim>
@@ -199,7 +280,9 @@ template <int dim>
 Convection<dim>::Convection ()
   :
   fe (1),
+  fe_velocity(1),
   dof_handler (triangulation),
+  dof_vel_handler(triangulation),
   timestep_number(0),
   time_step(1. / 500),
   time(0),
@@ -211,8 +294,8 @@ Convection<dim>::Convection ()
 template <int dim>
 void Convection<dim>::make_grid ()
 {
-  GridGenerator::hyper_L(triangulation);
-//  GridGenerator::hyper_cube (triangulation, -1, 1);
+//  GridGenerator::hyper_L(triangulation);
+  GridGenerator::hyper_cube (triangulation, -1, 1);
   triangulation.refine_global (2);
 
   std::cout << "   Number of active cells: "
@@ -228,6 +311,7 @@ template <int dim>
 void Convection<dim>::setup_system ()
 {
   dof_handler.distribute_dofs (fe);
+  dof_vel_handler.distribute_dofs(fe_velocity);
 
   std::cout << "   Number of degrees of freedom: "
             << dof_handler.n_dofs()
@@ -264,11 +348,14 @@ void Convection<dim>::assemble_system ()
 {
   QGauss<dim>  quadrature_formula(2);
 
-  RightHandSide<dim> right_hand_side;
+  RightHandSide1<dim> right_hand_side(nu);
+  VelocityU<dim>       velocity_U;
+  VelocityV<dim>       velocity_V;
 
   FEValues<dim> fe_values (fe, quadrature_formula,
                            update_values   | update_gradients |
                            update_quadrature_points | update_JxW_values);
+
 
   const unsigned int   dofs_per_cell = fe.dofs_per_cell;
   const unsigned int   n_q_points    = quadrature_formula.size();
@@ -281,6 +368,9 @@ void Convection<dim>::assemble_system ()
   std::vector<Tensor<1,dim> >          old_grad (n_q_points);
   std::vector<double>                  rhs_values_t (n_q_points);
   std::vector<double>                  rhs_values_t_1 (n_q_points);
+
+  std::vector<double>                  velocity_U_values (n_q_points);
+  std::vector<double>                  velocity_V_values (n_q_points);
 
   typename DoFHandler<dim>::active_cell_iterator
   cell = dof_handler.begin_active(),
@@ -301,12 +391,24 @@ void Convection<dim>::assemble_system ()
       right_hand_side.value_list (fe_values.get_quadrature_points(),
                                   rhs_values_t_1);
 
-      for (unsigned int q_index=0; q_index<n_q_points; ++q_index)
+      velocity_U.value_list(fe_values.get_quadrature_points(), velocity_U_values);
+      velocity_V.value_list(fe_values.get_quadrature_points(), velocity_V_values);
+
+
+      for (unsigned int q_index=0; q_index<n_q_points; ++q_index){
+
+    	 Tensor<1, dim> velocity_values;
+		 velocity_values[0] = velocity_U_values[q_index];
+		 velocity_values[1] = velocity_V_values[q_index];
+
         for (unsigned int i=0; i<dofs_per_cell; ++i)
           {
             for (unsigned int j=0; j<dofs_per_cell; ++j)
               cell_matrix(i,j) += ((fe_values.shape_value(i, q_index) *
             		               fe_values.shape_value(j, q_index)
+            		               +
+            		               time_step*contract(velocity_values , fe_values.shape_grad (j, q_index) )
+            		               * fe_values.shape_value (i, q_index)
             		               +
             		               theta * time_step *
             		               fe_values.shape_grad (i, q_index) *
@@ -322,7 +424,7 @@ void Convection<dim>::assemble_system ()
                             (1-theta)*rhs_values_t_1[q_index]) )*
                             fe_values.JxW (q_index));
           }
-
+      }
       cell->get_dof_indices (local_dof_indices);
       constraints.distribute_local_to_global(cell_matrix,
                                           cell_rhs,
@@ -362,7 +464,7 @@ void Convection<dim>::assemble_system ()
 template <int dim>
 void Convection<dim>::solve ()
 {
-  SolverControl           solver_control (1000, 1e-8 * system_rhs.l2_norm());
+/*  SolverControl           solver_control (1000, 1e-8 * system_rhs.l2_norm());
   SolverCG<>              solver (solver_control);
 
   PreconditionSSOR<> preconditioner;
@@ -370,9 +472,22 @@ void Convection<dim>::solve ()
 
   solver.solve (system_matrix, solution, system_rhs,
                 preconditioner);
+*/
+
+	int    vel_max_its     = 5000;
+	double vel_eps         = 1e-8;
+	int    vel_Krylov_size = 30;
+
+
+	SolverControl solver_control (vel_max_its, vel_eps*system_rhs.l2_norm());
+	{
+		SolverGMRES<Vector<double>> gmres1 (solver_control,
+						   SolverGMRES<>::AdditionalData (vel_Krylov_size));
+		gmres1.solve (system_matrix, solution, system_rhs, PreconditionIdentity());
+	}
 
   std::cout << "   " << solver_control.last_step()
-            << " CG iterations needed to obtain convergence."
+            << " GMRES iterations needed to obtain convergence."
             << std::endl;
 
 
