@@ -420,6 +420,7 @@ void Convection<dim>::assemble_system ()
             		        time_step*(1-theta)*
             		        (fe_values.shape_grad(i, q_index)*old_grad[q_index]) +
             		        time_step *
+            		        (fe_values.shape_value (i, q_index))*
                             (theta*rhs_values_t[q_index]  +
                             (1-theta)*rhs_values_t_1[q_index]) )*
                             fe_values.JxW (q_index));

@@ -174,13 +174,13 @@ Convection_BINARY_DIR:STATIC=/home/pankaj/workspace/Convection
 Convection_SOURCE_DIR:STATIC=/home/pankaj/workspace/Convection
 
 //No help, variable specified on the command line.
-DEAL_II_DIR:UNINITIALIZED=/home/pankaj/SOFTWARES/dealii_8.2.1/build
+DEAL_II_DIR:UNINITIALIZED=/home/pankaj/workspace/jufire/bundled/dealii/lib/cmake/deal.II
 
 //Path to a program.
 PERL_EXECUTABLE:FILEPATH=/usr/bin/perl
 
 //The directory containing a CMake configuration file for deal.II.
-deal.II_DIR:PATH=/home/pankaj/SOFTWARES/dealii_8.2.1/build/lib/cmake/deal.II
+deal.II_DIR:PATH=/home/pankaj/workspace/jufire/bundled/dealii/lib/cmake/deal.II
 
 
 ########################

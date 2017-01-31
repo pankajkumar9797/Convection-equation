@@ -11,8 +11,6 @@ SET(CMAKE_CXX_COMPILER_ID "GNU")
 # Preprocessor definitions for this target.
 SET(CMAKE_TARGET_DEFINITIONS
   "DEBUG"
-  "TBB_DO_ASSERT=1"
-  "TBB_USE_DEBUG"
   )
 
 # Targets to which this target links.
@@ -21,16 +19,13 @@ SET(CMAKE_TARGET_LINKED_INFO_FILES
 
 # The include file search paths:
 SET(CMAKE_C_TARGET_INCLUDE_PATH
-  "/home/pankaj/SOFTWARES/dealii_8.2.1/build/include"
-  "/home/pankaj/SOFTWARES/dealii_8.2.1/build/include/deal.II"
-  "/home/pankaj/SOFTWARES/dealii_8.2.1/include"
-  "/home/pankaj/SOFTWARES/dealii_8.2.1/include/deal.II"
-  "/home/pankaj/SOFTWARES/dealii_8.2.1/bundled/tbb41_20130401oss/include"
-  "/home/pankaj/SOFTWARES/dealii_8.2.1/bundled/muparser_v2_2_3/include"
+  "/home/pankaj/workspace/jufire/bundled/dealii/include"
+  "/home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/bundled"
   "/usr/lib/openmpi/include"
   "/usr/lib/openmpi/include/openmpi"
-  "/home/pankaj/SOFTWARES/trilinos_12.0.1/include"
-  "/home/pankaj/SOFTWARES/p4est_1.1/include"
+  "/home/pankaj/workspace/jufire/bundled/trilinos/include"
+  "/home/pankaj/workspace/jufire/bundled/oce/include/oce"
+  "/home/pankaj/workspace/jufire/bundled/p4est/FAST/include"
   )
 SET(CMAKE_CXX_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})
 SET(CMAKE_Fortran_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})

@@ -1,8 +1,8 @@
 MESSAGE(
 "###
 #
-#  Project  Convection  set up with  deal.II-8.2.1  found at
-#      /home/pankaj/SOFTWARES/dealii_8.2.1/build
+#  Project  Convection  set up with  deal.II-8.3.0  found at
+#      /home/pankaj/workspace/jufire/bundled/dealii
 #
 #  CMAKE_BUILD_TYPE:          Debug
 #
