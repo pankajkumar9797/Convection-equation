@@ -101,6 +101,45 @@ private:
   void refine_grid (const unsigned int min_grid_level, const unsigned int max_grid_level);
   void output_results () const;
 
+  double solution_bdf(
+    const double& sol_val,
+    const double& rhs_val,
+    const double& v_val,
+    const Tensor<1, dim>& sol_grad,
+    const Tensor<1, dim>& v_grad,
+    const Tensor<1, dim>& beta
+  ) const;
+
+  double advection_cell_operator(
+    const double& u_val,
+    const double& v_val,
+    const Tensor<1, dim>& u_grad,
+    const Tensor<1, dim>& v_grad,
+    const Tensor<1, dim>& beta
+  ) const;
+
+  double advection_face_operator(
+    const double& u_val,
+    const double& v_val,
+    const Tensor<1, dim>& beta,
+    const Tensor<1, dim>& normal
+  ) const;
+
+  double lhs_operator(
+    const double& u_val,
+    const double& v_val,
+    const Tensor<1, dim>& u_grad,
+    const Tensor<1, dim>& v_grad,
+    const double& alpha,
+    const Tensor<1, dim>& beta
+  ) const;
+
+  double streamline_diffusion(
+    const Tensor<1, dim>& u_grad,
+    const Tensor<1, dim>& v_grad,
+    const Tensor<1, dim>& beta
+  ) const;
+
   Triangulation<dim>   triangulation;
 
   FE_Q<dim>            fe;
@@ -121,7 +160,9 @@ private:
   unsigned int         timestep_number;
   double               time_step;
   double               time;
-  double               theta;
+
+  double               theta_imex;
+  double               theta_skew;
 
   const double         nu = 1.0;
 };
@@ -273,8 +314,75 @@ double BoundaryValues<dim>::value (const Point<dim> &/*p*/,
     return 0;
 }
 
+template<int dim>
+double Convection<dim>::solution_bdf(
+  const double& sol_val,
+  const double& rhs_val,
+  const double& v_val,
+  const Tensor<1, dim>& sol_grad,
+  const Tensor<1, dim>& v_grad,
+  const Tensor<1, dim>& beta
+) const{
+  return(
+	+ sol_val*v_val
+	- time_step*contract(beta , sol_grad )* v_val
+    + time_step * sol_grad * v_grad
+    + time_step * rhs_val*v_val
+  );
+}
+
+template<int dim>
+double Convection<dim>::advection_cell_operator(
+  const double& u_val,
+  const double& v_val,
+  const Tensor<1, dim>& u_grad,
+  const Tensor<1, dim>& v_grad,
+  const Tensor<1, dim>& beta
+) const {
+  return (
+    + (1 - theta_skew) * contract(beta, u_grad) * v_val
+    + (0 - theta_skew) * contract(beta, v_grad) * u_val
+    );
+}
 
 
+template<int dim>
+double Convection<dim>::advection_face_operator(
+  const double& u_val,
+  const double& v_val,
+  const Tensor<1, dim>& beta,
+  const Tensor<1, dim>& normal
+) const {
+  return (
+    + theta_skew * contract(beta, normal) * v_val * u_val
+    );
+}
+
+template<int dim>
+double Convection<dim>::lhs_operator(
+  const double& u_val,
+  const double& v_val,
+  const Tensor<1, dim>& u_grad,
+  const Tensor<1, dim>& v_grad,
+  const double& alpha,
+  const Tensor<1, dim>& beta
+) const {
+  return (
+    + theta_imex * advection_cell_operator(u_val, v_val, u_grad, v_grad, beta)
+    + theta_skew * alpha * (u_grad * v_grad)
+    + alpha * (u_grad * v_grad)
+    );
+}
+
+template<int dim>
+double Convection<dim>::streamline_diffusion(
+  const Tensor<1, dim>& u_grad,
+  const Tensor<1, dim>& v_grad,
+  const Tensor<1, dim>& beta
+) const {
+  const double dt = time_step;
+  return dt*dt/6*contract(beta, u_grad) * contract(beta, v_grad);
+}
 
 template <int dim>
 Convection<dim>::Convection ()
@@ -286,7 +394,8 @@ Convection<dim>::Convection ()
   timestep_number(0),
   time_step(1. / 500),
   time(0),
-  theta(0.5)
+  theta_imex(0.5),
+  theta_skew(0.5)
 {}
 
 
@@ -365,12 +474,14 @@ void Convection<dim>::assemble_system ()
 
   std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
   std::vector<double >                 old_values (n_q_points);
+  std::vector<double >                 new_values (n_q_points);
   std::vector<Tensor<1,dim> >          old_grad (n_q_points);
   std::vector<double>                  rhs_values_t (n_q_points);
   std::vector<double>                  rhs_values_t_1 (n_q_points);
 
   std::vector<double>                  velocity_U_values (n_q_points);
   std::vector<double>                  velocity_V_values (n_q_points);
+
 
   typename DoFHandler<dim>::active_cell_iterator
   cell = dof_handler.begin_active(),
@@ -379,10 +490,13 @@ void Convection<dim>::assemble_system ()
   for (; cell!=endc; ++cell)
     {
       fe_values.reinit (cell);
+      const double delta = 0.1 * cell->diameter ();
       cell_matrix = 0;
       cell_rhs = 0;
       fe_values.get_function_values (old_solution, old_values);
       fe_values.get_function_gradients(old_solution, old_grad);
+
+      fe_values.get_function_values (solution, new_values);
 
       right_hand_side.set_time(time);
       right_hand_side.value_list (fe_values.get_quadrature_points(),
@@ -403,27 +517,33 @@ void Convection<dim>::assemble_system ()
 
         for (unsigned int i=0; i<dofs_per_cell; ++i)
           {
-            for (unsigned int j=0; j<dofs_per_cell; ++j)
-              cell_matrix(i,j) += ((fe_values.shape_value(i, q_index) *
-            		               fe_values.shape_value(j, q_index)
-            		               +
-            		               time_step*contract(velocity_values , fe_values.shape_grad (j, q_index) )
-            		               * fe_values.shape_value (i, q_index)
-            		               +
-            		               theta * time_step *
-            		               fe_values.shape_grad (i, q_index) *
-                                   fe_values.shape_grad (j, q_index) )*
-                                   fe_values.JxW (q_index));
 
-            cell_rhs(i) += ((fe_values.shape_value (i, q_index) *
-            		        old_values[q_index] -
-            		        time_step*(1-theta)*
-            		        (fe_values.shape_grad(i, q_index)*old_grad[q_index]) +
-            		        time_step *
-            		        (fe_values.shape_value (i, q_index))*
-                            (theta*rhs_values_t[q_index]  +
-                            (1-theta)*rhs_values_t_1[q_index]) )*
-                            fe_values.JxW (q_index));
+        	const double& v_val          =  fe_values.shape_value(i, q_index);
+    	    const Tensor<1, dim>& v_grad =  fe_values.shape_grad(i, q_index);
+
+            for (unsigned int j=0; j<dofs_per_cell; ++j){
+
+            	const double& u_val =  fe_values.shape_value(j, q_index);
+        	    const Tensor<1, dim>& u_grad =  fe_values.shape_grad(j, q_index);
+
+
+				cell_matrix(i, j) += (
+				  + u_val * v_val
+				  + time_step * this->lhs_operator(u_val, v_val, u_grad, v_grad, nu, velocity_values)
+				  + streamline_diffusion(u_grad, v_grad, velocity_values)
+				  ) * fe_values.JxW(q_index);
+            }
+
+
+		        cell_rhs(i) += (
+		          //+ (old_values[q_index] + time_step *rhs_values_t[q_index] )* v_val
+		          + solution_bdf(old_values[q_index], rhs_values_t[q_index], v_val, old_grad[q_index], v_grad, velocity_values)
+		          + time_step * (
+		            + rhs_values_t[q_index] * v_val
+		            - (1 - theta_imex) * advection_cell_operator( old_values[q_index], v_val, old_grad[q_index], v_grad, velocity_values)
+		            - (1 - theta_imex) * nu * (old_grad[q_index] * v_grad)
+		          )
+		          ) * fe_values.JxW(q_index);
           }
       }
       cell->get_dof_indices (local_dof_indices);
@@ -476,7 +596,7 @@ void Convection<dim>::solve ()
 */
 
 	int    vel_max_its     = 5000;
-	double vel_eps         = 1e-8;
+	double vel_eps         = 1e-9;
 	int    vel_Krylov_size = 30;
 
 
