@@ -173,7 +173,7 @@ private:
   double               theta_imex;
   double               theta_skew;
 
-  const double         nu = 1.0;
+  const double         nu = 0.001;
 };
 
 template <int dim>
@@ -194,7 +194,7 @@ TemperatureInitialValues<dim>::value (const Point<dim> &p,
 
 //	const double time = this->get_time();
 
-	double initial_exp = (std::sin(PI*p[0]))*(std::sin(PI*p[1]));
+	double initial_exp = 0.0;//(std::sin(PI*p[0]))*(std::sin(PI*p[1]));
 
 	return initial_exp;
 }
@@ -224,21 +224,31 @@ public:
   virtual double value (const Point<dim> &p,
                         const unsigned int component = 0) const;
   const double time;
+private:
+  static const Point<dim> center_point;
 };
 
+template <>
+const Point<2> RightHandSide1<2>::center_point = Point<2> (-0.75, -0.75);
 
 template<int dim>
 double RightHandSide1<dim> ::value(const Point<dim> &p,
 		                    const unsigned int component) const{
-    
+	 /*
     double PI = 3.14159265358979323846;
 
     double right_exp = std::exp(-time)*std::sin(PI*p[0])*( -std::sin(PI*p[1])
-                                                           - 2*PI*PI*std::sin(PI*p[1])
+                                                           - 2*0.001*PI*PI*std::sin(PI*p[1])
                                                            + PI*std::cos(PI*p[0]));
 
     return right_exp;
+ */
 
+    Assert (component == 0, ExcIndexRange (component, 0, 1));
+    const double diameter = 0.1;
+    return ( (p-center_point).norm_square() < diameter*diameter ?
+             .1/std::pow(diameter,dim) :
+             0);
 }
 
 template<int dim>
@@ -260,7 +270,7 @@ VelocityU<dim>::value (const Point<dim>  &p,
 	double PI = 3.14159265358979323846;
 
 
-	return (std::sin(PI*p[0]))*(std::sin(PI*p[1]));
+	return 2.0;//(std::sin(PI*p[0]))*(std::sin(PI*p[1]));
 
 }
 
@@ -283,7 +293,7 @@ VelocityV<dim>::value (const Point<dim>  &p,
 	double PI = 3.14159265358979323846;
 
 
-	return (std::cos(PI*p[0]))*(std::cos(PI*p[1]));
+	return 1+0.8*std::sin(8*PI*p[0]);//(std::cos(PI*p[0]))*(std::cos(PI*p[1]));
 
 }
 
@@ -348,7 +358,7 @@ double Convection<dim>::solution_bdf1(
   const double& sol_old_old
 ) const{
   return(
-	+ (4.0/3)*sol_old - (1.0/3)*sol_old_old
+	+ (2.0)*sol_old - (0.5)*sol_old_old
 	);
 }
 
@@ -446,7 +456,7 @@ void Convection<dim>::make_grid ()
 {
 //  GridGenerator::hyper_L(triangulation);
   GridGenerator::hyper_cube (triangulation, -1, 1);
-  triangulation.refine_global (2);
+  triangulation.refine_global (4);
 
   std::cout << "   Number of active cells: "
             << triangulation.n_active_cells()
@@ -497,7 +507,7 @@ void Convection<dim>::setup_system ()
 template <int dim>
 void Convection<dim>::assemble_system ()
 {
-  QGauss<dim>  quadrature_formula(fe.degree+2);
+  QGauss<dim>  quadrature_formula(2);
 
   system_matrix = 0;
   system_rhs    = 0;
@@ -520,8 +530,9 @@ void Convection<dim>::assemble_system ()
   std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
   std::vector<double >                 old_values (n_q_points);
   std::vector<double >                 old_old_values (n_q_points);
-  std::vector<double >                 new_values (n_q_points);
+
   std::vector<Tensor<1,dim> >          old_grad (n_q_points);
+  std::vector<Tensor<1,dim> >          old_old_grad (n_q_points);
   std::vector<double>                  rhs_values_t (n_q_points);
   std::vector<double>                  rhs_values_t_1 (n_q_points);
 
@@ -542,8 +553,7 @@ void Convection<dim>::assemble_system ()
       fe_values.get_function_values (old_solution, old_values);
       fe_values.get_function_gradients(old_solution, old_grad);
       fe_values.get_function_values (old_old_solution, old_old_values);
-
-      fe_values.get_function_values (solution, new_values);
+      fe_values.get_function_gradients (old_old_solution, old_old_grad);
 
 //      right_hand_side.set_time(time);
       right_hand_side.value_list (fe_values.get_quadrature_points(),
@@ -558,9 +568,12 @@ void Convection<dim>::assemble_system ()
 
       for (unsigned int q_index=0; q_index<n_q_points; ++q_index){
 
-    	 Tensor<1, dim> velocity_values;
+         Tensor<1, dim> velocity_values;
 		 velocity_values[0] = velocity_U_values[q_index];
 		 velocity_values[1] = velocity_V_values[q_index];
+
+		 const double& exp_sol_val = 2.0*old_values[q_index] - old_old_values[q_index];
+		 const Tensor<1, dim>& exp_sol_grad = 2.0*old_grad[q_index] - old_old_grad[q_index];
 
         for (unsigned int i=0; i<dofs_per_cell; ++i)
           {
@@ -584,11 +597,10 @@ void Convection<dim>::assemble_system ()
 
 		        cell_rhs(i) += (
 		          + solution_bdf(old_values[q_index], rhs_values_t[q_index], v_val, old_grad[q_index], v_grad, velocity_values)
-//		          		        		+ solution_bdf1(old_values[q_index], old_old_values[q_index])*v_val
-		        		+ time_step * (
-		            + (rhs_values_t[q_index] ) * v_val
-		            - (1 - theta_imex) * advection_cell_operator( old_values[q_index], v_val, old_grad[q_index], v_grad, velocity_values)
-		            - (1 - theta_imex) * nu * (old_grad[q_index] * v_grad)
+		          + time_step * (
+		              + rhs_values_t[q_index]  * v_val
+		              - (1 - theta_imex) * advection_cell_operator( exp_sol_val, v_val, exp_sol_grad, v_grad, velocity_values)
+		              - (1 - theta_imex) * nu * (exp_sol_grad * v_grad)
 		          )
 		          ) * fe_values.JxW(q_index);
           }
@@ -601,21 +613,8 @@ void Convection<dim>::assemble_system ()
                                           local_dof_indices,
                                           system_matrix,
                                           system_rhs);
-/*
 
-        for (unsigned int i=0; i<dofs_per_cell; ++i)
-        {
-          for (unsigned int j=0; j<dofs_per_cell; ++j)
-            system_matrix.add (local_dof_indices[i],
-                               local_dof_indices[j],
-                               cell_matrix(i,j));
-
-          system_rhs(local_dof_indices[i]) += cell_rhs(i);
-        }*/
     }
-
-//  constraints.condense (system_matrix);
-//  constraints.condense (system_rhs);
 
 
   BoundaryValues<dim> boundary_values_function;
@@ -699,11 +698,11 @@ void Convection<dim>::assemble_system_2 ()
             		               fe_values.shape_value(i, q_index)
             		               +
             		               time_step*0.5*(contract(velocity_values , fe_values.shape_grad (j, q_index) )
-				                  * fe_values.shape_value (i, q_index)
-					          - contract(velocity_values , fe_values.shape_grad (i, q_index) )
-				                  * fe_values.shape_value (j, q_index) )
+				                                * fe_values.shape_value (i, q_index)
+					                            - contract(velocity_values , fe_values.shape_grad (i, q_index) )
+				                                * fe_values.shape_value (j, q_index) )
             		               +
-            		               time_step *
+            		               nu*time_step *
             		               fe_values.shape_grad (j, q_index) *
                                        fe_values.shape_grad (i, q_index) )*
                                        fe_values.JxW (q_index));
@@ -909,10 +908,10 @@ start_time_iteration:
       time += time_step;
       ++timestep_number;
 
-      if(time > time_step){old_old_solution = old_solution;}
+      old_old_solution = old_solution;
       old_solution = solution;
       solution = 0;
-  }while (time <= 0.5);
+  }while (time <= 1.0);
 
 
 }
