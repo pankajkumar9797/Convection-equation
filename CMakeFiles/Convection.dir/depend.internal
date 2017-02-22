@@ -18,6 +18,7 @@ CMakeFiles/Convection.dir/Convection.cc.o
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/base/mpi.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/base/numbers.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/base/parallel.h
+ /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/base/partitioner.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/base/point.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/base/polynomial.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/base/qprojector.h
@@ -1505,6 +1506,7 @@ CMakeFiles/Convection.dir/Convection.cc.o
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/identity_matrix.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/lapack_full_matrix.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/lapack_support.h
+ /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/parallel_vector.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/precondition.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/solver.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/solver_cg.h
@@ -1513,8 +1515,11 @@ CMakeFiles/Convection.dir/Convection.cc.o
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/sparse_matrix.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/sparsity_pattern.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/tridiagonal_matrix.h
+ /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/trilinos_precondition.h
+ /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/trilinos_vector_base.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/vector.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/vector_memory.h
+ /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/lac/vector_view.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/numerics/data_component_interpretation.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/numerics/data_out.h
  /home/pankaj/workspace/jufire/bundled/dealii/include/deal.II/numerics/data_out_dof_data.h
@@ -1538,17 +1543,22 @@ CMakeFiles/Convection.dir/Convection.cc.o
  /home/pankaj/workspace/jufire/bundled/p4est/FAST/include/sc_io.h
  /home/pankaj/workspace/jufire/bundled/p4est/FAST/include/sc_mpi.h
  /home/pankaj/workspace/jufire/bundled/p4est/FAST/include/sc_obstack.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_BLAS.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_BasicDirectory.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_BlockMap.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_BlockMapData.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_CombineMode.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Comm.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_CompObject.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_ConfigDefs.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_DLLExportMacro.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Data.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_DataAccess.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Directory.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_DistObject.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Distributor.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_FEVector.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Flops.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_IntSerialDenseMatrix.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_IntSerialDenseVector.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_LongLongSerialDenseMatrix.h
@@ -1557,10 +1567,61 @@ CMakeFiles/Convection.dir/Convection.cc.o
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_MpiComm.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_MpiCommData.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_MpiDistributor.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_MultiVector.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Object.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Operator.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_RowMatrix.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_SerialComm.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_SerialCommData.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_SrcDistObject.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Util.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_Vector.h
  /home/pankaj/workspace/jufire/bundled/trilinos/include/Epetra_config.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_Array.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ArrayRCP.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ArrayRCPDecl.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ArrayView.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ArrayViewDecl.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_Assert.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ConfigDefs.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ConstTypeTraits.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_DLLExportMacro.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_Describable.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ENull.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_Exceptions.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_FancyOStream.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_FilteredIterator.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_GlobalMPISession.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_LabeledObject.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_NullIteratorTraits.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ParameterEntry.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ParameterEntryValidator.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ParameterList.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_ParameterListExceptions.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_Ptr.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_PtrDecl.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_RCP.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_RCPDecl.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_RCPNode.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_StringIndexedOrderedValueObjectContainer.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_TestForException.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_Tuple.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_TypeNameTraits.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_Utils.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_VerbosityLevel.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_XMLObject.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_XMLObjectImplem.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_any.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_as.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_basic_oblackholestream.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_config.h
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_dyn_cast.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_getBaseObjVoidPtr.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_iostream_helpers.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_map.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_oblackholestream.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_stacktrace.hpp
+ /home/pankaj/workspace/jufire/bundled/trilinos/include/Teuchos_toString.hpp
  /usr/lib/openmpi/include/mpi.h
  /usr/lib/openmpi/include/mpi_portable_platform.h
  /usr/lib/openmpi/include/openmpi/ompi/mpi/cxx/comm.h

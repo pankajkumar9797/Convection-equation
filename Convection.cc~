@@ -99,7 +99,7 @@ private:
   void make_grid ();
   void setup_system();
   void assemble_system ();
-  void assemble_system_2 ();
+  void assemble_system_supg ();
   void solve ();
   void refine_grid (const unsigned int min_grid_level, const unsigned int max_grid_level);
   void output_results () const;
@@ -220,21 +220,24 @@ template<int dim>
 class RightHandSide1 : public Function<dim>
 {
 public:
-  RightHandSide1 (const double& time) : Function<dim>(), time(time) {}
+  RightHandSide1 (const double& nu = 0.01) : Function<dim>(), nu(nu) {}
   virtual double value (const Point<dim> &p,
                         const unsigned int component = 0) const;
-  const double time;
+private:
+  const double nu;
 };
 
 
 template<int dim>
 double RightHandSide1<dim> ::value(const Point<dim> &p,
 		                    const unsigned int component) const{
-    
-    double PI = 3.14159265358979323846;
+
+	double PI = 3.14159265358979323846;
+
+    const double time = this->get_time();
 
     double right_exp = std::exp(-time)*std::sin(PI*p[0])*( -std::sin(PI*p[1])
-                                                           - 2*PI*PI*std::sin(PI*p[1])
+                                                           - 2*nu*PI*PI*std::sin(PI*p[1])
                                                            + PI*std::cos(PI*p[0]));
 
     return right_exp;
@@ -502,7 +505,7 @@ void Convection<dim>::assemble_system ()
   system_matrix = 0;
   system_rhs    = 0;
 
-  RightHandSide1<dim> right_hand_side(time);
+  RightHandSide1<dim> right_hand_side(nu);
   VelocityU<dim>       velocity_U;
   VelocityV<dim>       velocity_V;
 
@@ -584,7 +587,7 @@ void Convection<dim>::assemble_system ()
 
 		        cell_rhs(i) += (
 		          + solution_bdf(old_values[q_index], rhs_values_t[q_index], v_val, old_grad[q_index], v_grad, velocity_values)
-//		          		        		+ solution_bdf1(old_values[q_index], old_old_values[q_index])*v_val
+		          //		        		+ solution_bdf1(old_values[q_index], old_old_values[q_index])*v_val
 		        		+ time_step * (
 		            + (rhs_values_t[q_index] ) * v_val
 		            - (1 - theta_imex) * advection_cell_operator( old_values[q_index], v_val, old_grad[q_index], v_grad, velocity_values)
@@ -617,7 +620,7 @@ void Convection<dim>::assemble_system ()
 //  constraints.condense (system_matrix);
 //  constraints.condense (system_rhs);
 
-
+/*
   BoundaryValues<dim> boundary_values_function;
   boundary_values_function.set_time(time);
 
@@ -629,116 +632,10 @@ void Convection<dim>::assemble_system ()
   MatrixTools::apply_boundary_values (boundary_values,
                                       system_matrix,
                                       solution,
-                                      system_rhs);
+                                      system_rhs); */
+//   }
 
 }
-
-template <int dim>
-void Convection<dim>::assemble_system_2 ()
-{
-  QGauss<dim>  quadrature_formula(2);
-
-  const RightHandSide1<dim> right_hand_side(time);
-  VelocityU<dim>       velocity_U;
-  VelocityV<dim>       velocity_V;
-
-  system_matrix = 0;
-  system_rhs    = 0;
-
-  FEValues<dim> fe_values (fe, quadrature_formula,
-                           update_values   | update_gradients |
-                           update_quadrature_points | update_JxW_values);
-
-
-  const unsigned int   dofs_per_cell = fe.dofs_per_cell;
-  const unsigned int   n_q_points    = quadrature_formula.size();
-
-  FullMatrix<double>   cell_matrix (dofs_per_cell, dofs_per_cell);
-  Vector<double>       cell_rhs (dofs_per_cell);
-
-  std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
-  std::vector<double >                 old_values (n_q_points);
-  std::vector<Tensor<1,dim> >          old_grad (n_q_points);
-  std::vector<double>                  rhs_values_t (n_q_points);
-  std::vector<double>                  rhs_values_t_1 (n_q_points);
-
-  std::vector<double>                  velocity_U_values (n_q_points);
-  std::vector<double>                  velocity_V_values (n_q_points);
-  std::vector<Tensor<1,dim> >          velocity_field (n_q_points);
-
-  typename DoFHandler<dim>::active_cell_iterator
-  cell = dof_handler.begin_active(),
-  endc = dof_handler.end();
-
-  for (; cell!=endc; ++cell)
-    {
-      fe_values.reinit (cell);
-      cell_matrix = 0;
-      cell_rhs = 0;
-      fe_values.get_function_values (old_solution, old_values);
-      fe_values.get_function_gradients(old_solution, old_grad);
-
-
-      right_hand_side.value_list (fe_values.get_quadrature_points(),
-                                  rhs_values_t);
-
-
-      velocity_U.value_list(fe_values.get_quadrature_points(), velocity_U_values);
-      velocity_V.value_list(fe_values.get_quadrature_points(), velocity_V_values);
-
-      for (unsigned int q_index=0; q_index<n_q_points; ++q_index){
-
-    	 Tensor<1, dim> velocity_values;
-		 velocity_values[0] = velocity_U_values[q_index];
-		 velocity_values[1] = velocity_V_values[q_index];
-
-        for (unsigned int i=0; i<dofs_per_cell; ++i)
-          {
-            for (unsigned int j=0; j<dofs_per_cell; ++j)
-              cell_matrix(i,j) += ((fe_values.shape_value(j, q_index) *
-            		               fe_values.shape_value(i, q_index)
-            		               +
-            		               time_step*0.5*(contract(velocity_values , fe_values.shape_grad (j, q_index) )
-				                  * fe_values.shape_value (i, q_index)
-					          - contract(velocity_values , fe_values.shape_grad (i, q_index) )
-				                  * fe_values.shape_value (j, q_index) )
-            		               +
-            		               time_step *
-            		               fe_values.shape_grad (j, q_index) *
-                                       fe_values.shape_grad (i, q_index) )*
-                                       fe_values.JxW (q_index));
-
-            cell_rhs(i) += ((old_values[q_index]*fe_values.shape_value (i, q_index)
-            		      +  time_step * rhs_values_t[q_index] * fe_values.shape_value (i, q_index)
-                               )*
-                            fe_values.JxW (q_index));
-          }
-      }
-      cell->get_dof_indices (local_dof_indices);
-     constraints.distribute_local_to_global(cell_matrix,
-                                          cell_rhs,
-                                          local_dof_indices,
-                                          system_matrix,
-                                          system_rhs);
-
-    }
-
-
-  BoundaryValues<dim> boundary_values_function;
-  boundary_values_function.set_time(time);
-
-  std::map<types::global_dof_index,double> boundary_values;
-  VectorTools::interpolate_boundary_values (dof_handler,
-                                            0,
-                                            boundary_values_function,
-                                            boundary_values);
-  MatrixTools::apply_boundary_values (boundary_values,
-                                      system_matrix,
-                                      solution,
-                                      system_rhs);
-
-}
-
 
 template <int dim>
 void Convection<dim>::solve ()
@@ -766,6 +663,9 @@ void Convection<dim>::solve ()
 						   SolverGMRES<>::AdditionalData (vel_Krylov_size));
 		gmres1.solve (system_matrix, solution, system_rhs, preconditioner);
 	}
+
+
+
 
 
 
@@ -883,12 +783,12 @@ start_time_iteration:
       std::cout << "Time step " << timestep_number << " at t=" << time
                 << std::endl;
 
-      assemble_system_2 ();
+      assemble_system ();
 
       solve ();
       output_results ();
 
-      if((timestep_number ==0)&& (pre_refinement_step < n_adaptive_pre_refinement_steps)){
+      if((timestep_number ==1)&& (pre_refinement_step < n_adaptive_pre_refinement_steps)){
 
     	  refine_grid(initial_global_refinement,
     			  initial_global_refinement + n_adaptive_pre_refinement_steps);
