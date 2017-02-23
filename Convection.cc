@@ -14,8 +14,7 @@
  * ---------------------------------------------------------------------
 
  *
- * Author: Wolfgang Bangerth, University of Heidelberg, 1999
- * Modified by Pankaj Kumar, MSc 2017.
+ * Author: Pankaj Kumar, MSc 2017.
  */
 
 #include <deal.II/base/utilities.h>
@@ -49,33 +48,6 @@
 
 #include <deal.II/lac/trilinos_precondition.h>
 
-/*
-#include <deal.II/base/utilities.h>
-#include <deal.II/base/logstream.h>
-#include <deal.II/base/config.h>
-#include <deal.II/grid/tria.h>
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
-#include <deal.II/dofs/dof_accessor.h>
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/dofs/dof_tools.h>
-#include <deal.II/fe/fe_values.h>
-#include <deal.II/base/quadrature_lib.h>
-#include <deal.II/base/function.h>
-#include <deal.II/numerics/vector_tools.h>
-#include <deal.II/numerics/matrix_tools.h>
-#include <deal.II/lac/vector.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/compressed_sparsity_pattern.h>
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/constraint_matrix.h>
-*/
 #include <deal.II/numerics/data_out.h>
 #include <fstream>
 #include <iostream>
@@ -173,7 +145,7 @@ private:
   double               theta_imex;
   double               theta_skew;
 
-  const double         nu = 0.001;
+  const double         nu = 1.0;//0.001;
 };
 
 template <int dim>
@@ -192,13 +164,33 @@ TemperatureInitialValues<dim>::value (const Point<dim> &p,
 {
 	double PI = 3.14159265358979323846;
 
-//	const double time = this->get_time();
 
-	double initial_exp = 0.0;//(std::sin(PI*p[0]))*(std::sin(PI*p[1]));
+	double initial_exp = (1 - p[0]*p[0])*(1 - p[1]*p[1]);//0.0;//(std::sin(PI*p[0]))*(std::sin(PI*p[1]));
 
 	return initial_exp;
 }
 
+
+template <int dim>
+class TemperatureExactSol : public Function<dim>
+{
+public:
+TemperatureExactSol (const double& time) : Function<dim>(1), time(time) {}
+virtual double value (const Point<dim>   &p,
+					  const unsigned int  component = 0) const;
+const double time;
+};
+
+template <int dim>
+double
+TemperatureExactSol<dim>::value (const Point<dim> &p,
+        							  const unsigned int component) const
+{
+
+	double initial_exp = std::exp(-time)*(1 - p[0]*p[0])*(1 - p[1]*p[1]);
+
+	return initial_exp;
+}
 
 template<int dim>
 class RightHandSide : public Function<dim>
@@ -224,13 +216,13 @@ public:
   virtual double value (const Point<dim> &p,
                         const unsigned int component = 0) const;
   const double time;
-private:
-  static const Point<dim> center_point;
+//private:
+//  static const Point<dim> center_point;
 };
-
+/*
 template <>
 const Point<2> RightHandSide1<2>::center_point = Point<2> (-0.75, -0.75);
-
+*/
 template<int dim>
 double RightHandSide1<dim> ::value(const Point<dim> &p,
 		                    const unsigned int component) const{
@@ -242,13 +234,15 @@ double RightHandSide1<dim> ::value(const Point<dim> &p,
                                                            + PI*std::cos(PI*p[0]));
 
     return right_exp;
- */
+
 
     Assert (component == 0, ExcIndexRange (component, 0, 1));
     const double diameter = 0.1;
     return ( (p-center_point).norm_square() < diameter*diameter ?
              .1/std::pow(diameter,dim) :
-             0);
+             0);*/
+
+	return std::exp(-time)*(5 - 3*p[0]*p[0] -3*p[1]*p[1] + p[0]*p[0]*p[1]*p[1]);
 }
 
 template<int dim>
@@ -270,7 +264,7 @@ VelocityU<dim>::value (const Point<dim>  &p,
 	double PI = 3.14159265358979323846;
 
 
-	return 2.0;//(std::sin(PI*p[0]))*(std::sin(PI*p[1]));
+	return (2*p[0]*p[0] - std::pow(p[0],4) - 1)*(p[1] - p[1]*p[1]*p[1]);//2.0;//(std::sin(PI*p[0]))*(std::sin(PI*p[1]));
 
 }
 
@@ -293,7 +287,7 @@ VelocityV<dim>::value (const Point<dim>  &p,
 	double PI = 3.14159265358979323846;
 
 
-	return 1+0.8*std::sin(8*PI*p[0]);//(std::cos(PI*p[0]))*(std::cos(PI*p[1]));
+	return -(2*p[1]*p[1] - std::pow(p[1],4) - 1)*(p[0] - p[0]*p[0]*p[0]);//1+0.8*std::sin(8*PI*p[0]);//(std::cos(PI*p[0]))*(std::cos(PI*p[1]));
 
 }
 
@@ -374,7 +368,7 @@ double Convection<dim>::solution_bdf(
   return(
 	+ sol_val*v_val
 	- time_step*contract(beta , sol_grad )* v_val
-    + time_step * nu * sol_grad * v_grad
+//    + time_step * nu * sol_grad * v_grad
     + time_step * rhs_val*v_val
   );
 }
@@ -596,7 +590,8 @@ void Convection<dim>::assemble_system ()
 
 
 		        cell_rhs(i) += (
-		          + solution_bdf(old_values[q_index], rhs_values_t[q_index], v_val, old_grad[q_index], v_grad, velocity_values)
+//		          + solution_bdf(old_values[q_index], rhs_values_t[q_index], v_val, old_grad[q_index], v_grad, velocity_values)
+		          + old_values[q_index]*v_val
 		          + time_step * (
 		              + rhs_values_t[q_index]  * v_val
 		              - (1 - theta_imex) * advection_cell_operator( exp_sol_val, v_val, exp_sol_grad, v_grad, velocity_values)
@@ -847,13 +842,17 @@ void Convection<dim>::run ()
 {
   std::cout << "Solving problem in " << dim << " space dimensions." << std::endl;
 
+  std::ofstream error_out;
+  error_out.open("l2_error.dat");
+
   make_grid();
   setup_system ();
 
   unsigned int pre_refinement_step = 0;
-  const unsigned int n_adaptive_pre_refinement_steps = 4;
-  const unsigned int initial_global_refinement = 2;
-
+  const unsigned int n_adaptive_pre_refinement_steps = 5;
+  const unsigned int initial_global_refinement = 3;
+  Vector<float> difference_per_cell (triangulation.n_active_cells());
+  double L2_error ;
 
 start_time_iteration:
 
@@ -882,7 +881,7 @@ start_time_iteration:
       std::cout << "Time step " << timestep_number << " at t=" << time
                 << std::endl;
 
-      assemble_system_2 ();
+      assemble_system ();
 
       solve ();
       output_results ();
@@ -907,6 +906,16 @@ start_time_iteration:
       }
       time += time_step;
       ++timestep_number;
+
+
+      VectorTools::integrate_difference (dof_handler,
+                                         solution,
+                                         TemperatureExactSol<dim>(time),
+                                         difference_per_cell,
+                                         QGauss<dim>(3),
+                                         VectorTools::L2_norm);
+      L2_error = difference_per_cell.l2_norm();
+      error_out << time <<"  "<<L2_error << std::endl;
 
       old_old_solution = old_solution;
       old_solution = solution;
